@@ -1,145 +1,47 @@
 <!doctype html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#111827">
-  <title>Vedátorský podcast – podle témat</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <style>
-    :root{--bg:#f4f6fb;--card:#fff;--ink:#162033;--muted:#64748b;--line:#dbe2ea;--accent:#5b4bdb;--accent2:#ede9fe}
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-    header{background:linear-gradient(135deg,#151b2f,#32256c);color:white;padding:28px 18px 24px}
-    .wrap{max-width:1050px;margin:auto}.eyebrow{opacity:.75;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.76rem}
-    h1{font-size:clamp(1.7rem,5vw,2.7rem);margin:.25rem 0 .4rem}.sub{max-width:700px;opacity:.86;line-height:1.5}
-    main{padding:18px}.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 8px 30px rgba(15,23,42,.06)}
-    .controls{display:grid;grid-template-columns:1fr auto;gap:10px}.search{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;font-size:1rem}
-    button,select{font:inherit}.refresh{border:0;border-radius:12px;background:var(--accent);color:white;padding:0 16px;font-weight:700;cursor:pointer}
-    .topics{display:flex;gap:8px;overflow:auto;padding:14px 0 4px;scrollbar-width:thin}.topic{white-space:nowrap;border:1px solid var(--line);background:white;border-radius:999px;padding:8px 12px;cursor:pointer}
-    .topic.active{background:var(--accent2);border-color:#8b7ee8;color:#392b9b;font-weight:700}.meta{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 2px 10px;color:var(--muted)}
-    .sort{border:1px solid var(--line);background:white;border-radius:10px;padding:8px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:13px}
-    article{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;min-height:260px}
-    article h2{font-size:1.08rem;line-height:1.35;margin:.35rem 0 .55rem}.date{color:var(--muted);font-size:.85rem}.desc{line-height:1.48;color:#354158;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
-    .tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.tag{font-size:.76rem;background:#eef2ff;color:#3730a3;border-radius:999px;padding:4px 8px}
-    .links{display:flex;gap:8px;margin-top:auto}.links a{flex:1;text-align:center;text-decoration:none;border-radius:10px;padding:9px;font-weight:700}
-    .primary{background:var(--accent);color:white}.secondary{border:1px solid var(--line);color:var(--ink)}.status{padding:28px;text-align:center;color:var(--muted)}
-    details{margin-top:12px;color:var(--muted)} details summary{cursor:pointer;font-weight:650}.notice{font-size:.87rem;color:var(--muted);margin-top:12px}
-    @media(max-width:550px){.controls{grid-template-columns:1fr}.refresh{padding:12px}.meta{align-items:flex-start;flex-direction:column}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4338ca">
+<title>Vedátor – hledání podobných otázek</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./app.css">
 </head>
 <body>
-<header><div class="wrap">
-  <div class="eyebrow">Neoficiální tematický katalog</div>
-  <h1>Vedátorský podcast podle témat</h1>
-  <div class="sub">Vyber téma, například temná energie, mimozemský život nebo FAQ. Aplikace prohledá názvy a popisy epizod a ukáže, o čem se v nich mluví.</div>
-</div></header>
-<main class="wrap">
-  <section class="panel">
-    <div class="controls">
-      <input id="search" class="search" placeholder="Hledat: černé díry, evoluce, kvantová fyzika…">
-      <button id="refresh" class="refresh">Aktualizovat díly</button>
-    </div>
-    <div id="topics" class="topics"></div>
-    <details>
-      <summary>Jak třídění funguje</summary>
-      <p>Aplikace vyhodnocuje název a oficiální popis každé epizody podle skupin klíčových slov. Jeden díl může patřit do více témat. Ruční hledání funguje zároveň přes celý text.</p>
-    </details>
-    <div class="notice">Data se načítají z veřejného RSS podcastu. Při prvním spuštění je potřeba internet; poslední načtený katalog se uloží do zařízení.</div>
-  </section>
-  <div class="meta"><div id="count">Načítám epizody…</div><select id="sort" class="sort"><option value="new">Nejnovější</option><option value="old">Nejstarší</option><option value="number">Podle čísla dílu</option></select></div>
-  <section id="episodes" class="grid"><div class="status">Načítám katalog…</div></section>
+<header><div class="wrap"><h1>Vedátor: databáze otázek</h1><p>Jednotný export otázek z repozitáře a vyhledávač pěti nejpodobnějších dotazů s podporou češtiny, slovenštiny, skloňování, diakritiky a běžných překlepů.</p></div></header>
+<main class="wrap grid">
+<section class="card">
+  <div class="status"><span id="statusDot" class="dot"></span><div><strong id="statusTitle">Připravuji databázi…</strong><div id="statusText" class="muted">Nejdřív hledám uloženou nebo vloženou databázi.</div><div class="progress"><div id="progressBar"></div></div></div></div>
+  <div id="sourceNote" class="note small" style="margin-top:12px">Po prvním načtení se databáze uloží do prohlížeče. Na GitHub Pages se pomocí service workeru uloží také samotná aplikace, takže ji lze příště otevřít i bez internetu. Tlačítkem níže lze vytvořit také samostatnou offline kopii s daty přímo uvnitř HTML.</div>
+  <div class="actions"><button id="refreshBtn" class="secondary" type="button">Aktualizovat z GitHubu</button></div>
+</section>
+<section class="card">
+  <h2 style="margin-top:0">Najít 5 nejpodobnějších otázek</h2>
+  <textarea id="query" placeholder="Např.: Proč světlo neunikne z černé díry? / Prečo svetlo neunikne z čiernej diery?"></textarea>
+  <div class="actions"><button id="searchBtn" disabled>Najít podobné otázky</button><button id="demoBtn" class="secondary" disabled>Vložit ukázku</button></div>
+  <div id="results" class="results"><div class="muted">Výsledky se zobrazí po načtení databáze.</div></div>
+</section>
+<section class="card">
+  <h2 style="margin-top:0">Export</h2>
+  <p class="muted">Každý řádek obsahuje díl, pořadí, čas, přímý odkaz na konkrétní otázku, českou a slovenskou podobu, normalizovaný text, klíčová slova a rozšířené vyhledávací termíny.</p>
+  <div class="actions"><button id="csvBtn" disabled>Stáhnout CSV</button><button id="jsonBtn" class="secondary" disabled>Stáhnout JSON</button><button id="offlineBtn" class="secondary" disabled>Stáhnout offline HTML s daty</button></div>
+  <p class="muted small">Offline HTML obsahuje celou databázi přímo v souboru. Při dalším otevření nic nestahuje a funguje i bez internetu.</p>
+</section>
+<section class="card">
+  <h2 style="margin-top:0">Všechny otázky</h2>
+  <div class="toolbar"><input id="filter" type="search" placeholder="Filtrovat otázky nebo klíčová slova…" disabled><div id="visibleCount" class="muted"></div></div>
+  <div class="table-wrap"><table><thead><tr><th>ID</th><th>Díl</th><th>Čas</th><th>Otázka česky / původní</th><th>Slovensky</th><th>Klíčová slova</th><th>Odkaz</th></tr></thead><tbody id="tbody"><tr><td colspan="7" class="muted">Načítám…</td></tr></tbody></table></div>
+</section>
+<section class="card small muted">
+  <strong>Jak se podobnost počítá:</strong> kombinace TF‑IDF kosinové podobnosti, váženého překryvu kořenů slov, znakových n‑gramů a přesných shod čísel či odborných výrazů. Před porovnáním se odstraní diakritika, běžná česká a slovenská slova, sjednotí se časté CZ/SK ekvivalenty a vytvoří se lehké slovní kořeny.
+</section>
 </main>
-<script>
-const FEED='https://feed.podbean.com/vedatorskypodcast/feed.xml';
-const PROXIES=[
-  u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-  u=>'https://corsproxy.io/?'+encodeURIComponent(u)
-];
-const TOPICS={
-  'Vše':[],
-  'FAQ':['faq','dobré otázky','detské otázky','dětské otázky'],
-  'Mimozemský život':['mimozem','astrobiolog','exoplanet','civiliz','život vo vesmíre','život ve vesmíru','biosignat'],
-  'Kosmologie':['vesmír','kozmolog','velký třesk','veľký tresk','rozpín','časopriestor','horizont udalostí','horizont událostí'],
-  'Temná energie':['tmavá energia','temná energie','dark energy'],
-  'Temná hmota':['tmavá hmota','temná hmota','dark matter'],
-  'Černé díry':['čierna diera','černá díra','čierne diery','černé díry','black hole'],
-  'Kvantová fyzika':['kvant','superpoz','previazanos','provázanost','interpretácia','interpretace'],
-  'Relativita':['relativit','dilatácia času','dilatace času','rýchlosť svetla','rychlost světla'],
-  'Astronomie':['hviezd','hvězd','planét','planet','galaxi','teleskop','slnko','slunce','mesiac','měsíc','mars','jupiter'],
-  'Biologie a medicína':['bunk','mozog','mozek','gen','evol','vírus','virus','baktér','sperm','vajíč','alzheimer','dopamín','dopamin'],
-  'Matematika':['matemat','geometri','fraktál','nekoneč','chaos','pravdepodob','pravděpodob'],
-  'Technologie a AI':['umelá inteligencia','umělá inteligence','ai ','internet','počítač','robot','algoritm'],
-  'Země a příroda':['zemetrasen','zemětřesen','sopk','tornád','hurikán','klíma','klima','oceán','geológ','geolog'],
-  'Chemie a materiály':['chem','molekul','atóm','atom','prvok','prvek','hélium','helium','materiál'],
-  'Společnost a psychologie':['sociálne siete','sociální sítě','psychol','spoločnosť','společnost','morál','radikaliz','ekonom','peniaz','peněz']
-};
-let episodes=[], active='Vše';
-
-const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'');
-const cleanHtml=s=>{const d=document.createElement('div');d.innerHTML=s||'';return (d.textContent||'').replace(/\s+/g,' ').trim()};
-const short=s=>{s=cleanHtml(s).replace(/Podcast vzniká[\s\S]*/i,'').trim(); return s.length>440?s.slice(0,437).replace(/\s+\S*$/,'')+'…':s};
-function categories(ep){
- const txt=norm(ep.title+' '+ep.description);
- return Object.entries(TOPICS).filter(([k,words])=>k!=='Vše'&&words.some(w=>txt.includes(norm(w)))).map(x=>x[0]);
-}
-function parse(xml){
- const doc=new DOMParser().parseFromString(xml,'text/xml');
- if(doc.querySelector('parsererror')) throw new Error('RSS se nepodařilo přečíst.');
- return [...doc.querySelectorAll('item')].map((it,i)=>{
-   const title=it.querySelector('title')?.textContent?.trim()||'Bez názvu';
-   const description=it.querySelector('description')?.textContent||it.getElementsByTagName('content:encoded')[0]?.textContent||'';
-   const enclosure=it.querySelector('enclosure')?.getAttribute('url')||'';
-   const link=it.querySelector('link')?.textContent?.trim()||enclosure;
-   const date=it.querySelector('pubDate')?.textContent||'';
-   const m=title.match(/podcast\s+(\d+)/i);
-   return {title,description,date,link,enclosure,number:m?+m[1]:0,id:link||title+i};
- });
-}
-async function load(){
- document.querySelector('#count').textContent='Aktualizuji katalog…';
- let lastErr;
- for(const proxy of PROXIES){
-   try{
-     const r=await fetch(proxy(FEED)); if(!r.ok) throw new Error('HTTP '+r.status);
-     const xml=await r.text(); const data=parse(xml); if(data.length<20) throw new Error('Neúplný RSS');
-     episodes=data; localStorage.setItem('vedatorEpisodes',JSON.stringify(data)); localStorage.setItem('vedatorUpdated',new Date().toISOString()); render(); return;
-   }catch(e){lastErr=e}
- }
- const saved=localStorage.getItem('vedatorEpisodes');
- if(saved){episodes=JSON.parse(saved);render();alert('Aktualizace se nepodařila, zobrazuji poslední uložený katalog.');}
- else {document.querySelector('#episodes').innerHTML='<div class="status">Katalog se nepodařilo načíst. Zkontroluj připojení a zkus tlačítko Aktualizovat díly.</div>';document.querySelector('#count').textContent='Bez dat';}
-}
-function renderTopics(){
- const el=document.querySelector('#topics'); el.innerHTML='';
- Object.keys(TOPICS).forEach(t=>{const b=document.createElement('button');b.className='topic'+(t===active?' active':'');b.textContent=t;b.onclick=()=>{active=t;render()};el.appendChild(b)});
-}
-function render(){
- renderTopics();
- const q=norm(document.querySelector('#search').value);
- let arr=episodes.map(e=>({...e,cats:categories(e)})).filter(e=>{
-   const topicOK=active==='Vše'||e.cats.includes(active);
-   const queryOK=!q||norm(e.title+' '+cleanHtml(e.description)).includes(q);
-   return topicOK&&queryOK;
- });
- const sort=document.querySelector('#sort').value;
- arr.sort((a,b)=>sort==='old'?new Date(a.date)-new Date(b.date):sort==='number'?b.number-a.number:new Date(b.date)-new Date(a.date));
- document.querySelector('#count').textContent=`Nalezeno ${arr.length} z ${episodes.length} epizod`;
- const box=document.querySelector('#episodes');box.innerHTML='';
- if(!arr.length){box.innerHTML='<div class="status">Pro tuto kombinaci tématu a hledání jsem nic nenašel.</div>';return}
- arr.forEach(e=>{
-   const a=document.createElement('article');
-   const dt=e.date?new Intl.DateTimeFormat('cs-CZ',{day:'numeric',month:'long',year:'numeric'}).format(new Date(e.date)):'';
-   a.innerHTML=`<div class="date">${dt}</div><h2>${escapeHtml(e.title)}</h2><div class="desc">${escapeHtml(short(e.description)||'Oficiální popis není k dispozici.')}</div><div class="tags">${(e.cats.length?e.cats:['Ostatní']).map(x=>`<span class="tag">${escapeHtml(x)}</span>`).join('')}</div><div class="links">${e.enclosure?`<a class="primary" href="${escapeAttr(e.enclosure)}" target="_blank">Přehrát</a>`:''}<a class="secondary" href="${escapeAttr(e.link)}" target="_blank">Detail dílu</a></div>`;
-   box.appendChild(a);
- });
-}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function escapeAttr(s){return escapeHtml(s)}
-document.querySelector('#search').addEventListener('input',render);
-document.querySelector('#sort').addEventListener('change',render);
-document.querySelector('#refresh').addEventListener('click',load);
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-const saved=localStorage.getItem('vedatorEpisodes');
-if(saved){try{episodes=JSON.parse(saved);render()}catch{load()}} else load();
-</script>
-</body></html>
+<script src="./app-1.js"></script>
+<script src="./app-2.js"></script>
+<script src="./app-3.js"></script>
+<script src="./app-4.js"></script>
+<script src="./app-5.js"></script>
+</body>
+</html>

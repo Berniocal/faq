@@ -1,10 +1,10 @@
-VEDÁTORSKÝ PODCAST PODLE TÉMAT
+VEDÁTOR – DATABÁZE OTÁZEK
 
-1. Nahrajte celý obsah složky na GitHub Pages nebo jiný HTTPS hosting.
-2. Otevřete index.html přes webovou adresu.
-3. Aplikace načte veřejný RSS kanál podcastu přes veřejný CORS proxy server.
-4. Poslední úspěšně načtený katalog uloží do localStorage, takže jej lze později procházet i bez nového načtení.
-5. Tematické třídění lze upravit přímo v index.html v objektu TOPICS.
+PWA pro hledání pěti nejpodobnějších již zodpovězených otázek z Vedátorského podcastu.
 
-Poznámka:
-Třídění je založeno na názvu a oficiálním popisu epizody, nikoli na kompletním přepisu audia.
+Při prvním otevření načte aktuální otázky z repozitáře Berniocal/vedator a uloží je do localStorage. Service worker současně uloží aplikaci do Cache Storage. Další spuštění je rychlé a může fungovat bez internetu. Tlačítko „Aktualizovat z GitHubu“ načte nové nebo upravené otázky.
+
+GitHub Pages:
+https://berniocal.github.io/faq/
+
+Při prvním otevření musí být dostupné internetové připojení.

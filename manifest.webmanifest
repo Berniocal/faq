@@ -1,13 +1,16 @@
 {
-  "name": "Vedátorský podcast podle témat",
-  "short_name": "Vedátor témata",
+  "name": "Vedátor – hledání podobných otázek",
+  "short_name": "Vedátor otázky",
+  "description": "Databáze otázek z Vedátorského podcastu a vyhledávání pěti nejpodobnějších dotazů.",
+  "lang": "cs",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f4f6fb",
-  "theme_color": "#111827",
+  "theme_color": "#4338ca",
   "icons": [
     {
-      "src": "icon.svg",
+      "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
