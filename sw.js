@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'vedator-question-matcher-app-v7';
+const CACHE_NAME = 'vedator-question-matcher-app-v8';
 const APP_SHELL = [
   "./",
   "./index.html",
