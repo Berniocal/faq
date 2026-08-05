@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'vedator-question-matcher-app-v2';
+const CACHE_NAME = 'vedator-question-matcher-app-v3';
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   "./app-2.js",
   "./app-3.js",
   "./app-4.js",
+  "./repository-sync.js",
   "./app-5.js",
   "./manifest.webmanifest",
   "./icon.svg"
@@ -38,14 +39,14 @@ self.addEventListener('fetch', event => {
   }
 
   if (sameOrigin) {
-    event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
+    event.respondWith(fetch(request).then(response => {
       if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
       return response;
-    })));
+    }).catch(() => caches.match(request)));
     return;
   }
 
-  if (url.hostname === 'raw.githubusercontent.com' || url.hostname === 'cdn.jsdelivr.net') {
+  if (url.hostname === 'raw.githubusercontent.com' || url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'api.github.com') {
     event.respondWith(fetch(request).then(response => {
       if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
       return response;
