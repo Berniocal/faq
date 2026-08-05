@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'vedator-question-matcher-app-v4';
+const CACHE_NAME = 'vedator-question-matcher-app-v5';
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,6 +12,7 @@ const APP_SHELL = [
   "./app-4.js",
   "./repository-sync.js",
   "./app-5.js",
+  "./thematic-scoring.js",
   "./manifest.webmanifest",
   "./icon.svg"
 ];
