@@ -35,10 +35,11 @@
   <div class="table-wrap"><table><thead><tr><th>ID</th><th>Díl</th><th>Čas</th><th>Otázka česky / původní</th><th>Slovensky</th><th>Klíčová slova</th><th>Odkaz</th></tr></thead><tbody id="tbody"><tr><td colspan="7" class="muted">Načítám…</td></tr></tbody></table></div>
 </section>
 <section class="card small muted">
-  <strong>Jak se podobnost počítá:</strong> kombinace TF‑IDF kosinové podobnosti, váženého překryvu kořenů slov, znakových n‑gramů a přesných shod čísel či odborných výrazů. Před porovnáním se odstraní diakritika, běžná česká a slovenská slova, sjednotí se časté CZ/SK ekvivalenty a vytvoří se lehké slovní kořeny.
+  <strong>Jak se podobnost počítá:</strong> kombinace TF‑IDF kosinové podobnosti, váženého překryvu kořenů slov, znakových n‑gramů a přesných shod čísel či odborných výrazů. Před porovnáním se odstraní diakritika, běžná česká a slovenská slova a vytvoří se lehké slovní kořeny. Skloňované a české/slovenské varianty stejného pojmu se sloučí a do skóre se započítají pouze jednou.
 </section>
 </main>
 <script src="./app-1.js"></script>
+<script src="./concept-dedupe.js"></script>
 <script src="./app-2.js"></script>
 <script src="./app-3.js"></script>
 <script src="./app-4.js"></script>
