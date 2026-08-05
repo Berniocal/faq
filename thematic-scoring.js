@@ -1,7 +1,7 @@
 'use strict';
 
-// Tematické filtrování a skóre vztažené k položené otázce.
-// 100 % znamená, že nalezená otázka pokrývá všechny tematické pojmy dotazu.
+// Tematické filtrování a vyvážené skóre podobnosti.
+// 100 % znamená: stejné tematické pojmy a stejný počet tematických pojmů.
 (()=>{
   if(globalThis.__vedatorThematicScoring)return;
   globalThis.__vedatorThematicScoring=true;
@@ -88,31 +88,67 @@
     return matches;
   }
 
+  function evaluateVariant(queryConcepts,queryChargrams,candidateText){
+    const candidateConcepts=conceptBundle(candidateText);
+    const matches=matchConcepts(queryConcepts,candidateConcepts);
+    const matchedCount=matches.length;
+    const queryCount=queryConcepts.length;
+    const candidateCount=candidateConcepts.length;
+    const coverage=queryCount?matchedCount/queryCount:0;
+    const precision=candidateCount?matchedCount/candidateCount:0;
+
+    // Harmonický průměr pokrytí a přesnosti (F1 / Sørensen–Dice).
+    // Trestá chybějící pojmy i nadbytečné pojmy dlouhé nalezené otázky.
+    const score=(coverage+precision)?2*coverage*precision/(coverage+precision):0;
+    const lengthBalance=queryCount&&candidateCount
+      ?Math.min(queryCount,candidateCount)/Math.max(queryCount,candidateCount)
+      :0;
+    const characterSimilarity=dice(queryChargrams,ngrams(candidateText));
+
+    return{
+      score,
+      coverage,
+      precision,
+      lengthBalance,
+      characterSimilarity,
+      matches,
+      matchedCount,
+      queryCount,
+      candidateCount
+    };
+  }
+
   rank=function(query){
     const queryConcepts=conceptBundle(query);
     const queryChargrams=ngrams(query);
 
     return questions.map(question=>{
-      const candidateConcepts=conceptBundle(`${question.question_cs||''} ${question.question_sk||''}`);
-      const matches=matchConcepts(queryConcepts,candidateConcepts);
-      const coverage=queryConcepts.length?matches.length/queryConcepts.length:0;
-      const precision=candidateConcepts.length?matches.length/candidateConcepts.length:0;
-      const characterSimilarity=dice(queryChargrams,question.chargrams||ngrams(`${question.question_cs||''} ${question.question_sk||''}`));
+      // Českou a slovenskou verzi hodnotíme odděleně, aby se jejich slova
+      // nesčítala a uměle neprodlužovala nalezenou otázku.
+      const variants=[question.question_cs,question.question_sk]
+        .map(value=>String(value||'').trim())
+        .filter((value,index,array)=>value&&array.indexOf(value)===index)
+        .map(text=>({...evaluateVariant(queryConcepts,queryChargrams,text),text}));
 
-      // Procento je výhradně pokrytí položené otázky. Další metriky jen rozhodují pořadí při shodě.
-      const tieBreak=0.7*precision+0.3*characterSimilarity;
+      const best=(variants.length?variants:[evaluateVariant(queryConcepts,queryChargrams,'')])
+        .sort((a,b)=>
+          b.score-a.score||
+          b.matchedCount-a.matchedCount||
+          b.lengthBalance-a.lengthBalance||
+          b.characterSimilarity-a.characterSimilarity
+        )[0];
+
       return{
         q:question,
-        score:coverage,
-        matched:matches.map(item=>item.label),
-        matchedCount:matches.length,
-        queryCount:queryConcepts.length,
-        tieBreak
+        ...best,
+        matched:best.matches.map(item=>item.label)
       };
     }).sort((a,b)=>
       b.score-a.score||
-      b.tieBreak-a.tieBreak||
       b.matchedCount-a.matchedCount||
+      b.lengthBalance-a.lengthBalance||
+      b.coverage-a.coverage||
+      b.characterSimilarity-a.characterSimilarity||
       b.q.episode-a.q.episode
     ).slice(0,5);
   };
@@ -124,7 +160,7 @@
       $('#results').innerHTML='<div class="warning">Otázka neobsahuje žádný tematický pojem. Doplňte například objekt, jev nebo odborný výraz.</div>';
       return;
     }
-    $('#results').innerHTML=list.map((result,index)=>`<article class="result"><div class="result-head"><div><div class="meta">${index+1}. místo · díl ${result.q.episode} · ${esc(result.q.time||'bez času')}</div><h3>${esc(result.q.question_cs||result.q.question_sk)}</h3>${result.q.question_sk&&result.q.question_sk!==result.q.question_cs?`<div class="muted small">${esc(result.q.question_sk)}</div>`:''}</div><span class="score">${(100*result.score).toFixed(1)} %</span></div><div class="muted small" style="margin-top:8px">Shoda ${result.matchedCount} z ${result.queryCount} tematických pojmů položené otázky.</div><div class="chips">${result.matched.length?result.matched.map(value=>`<span class="chip">${esc(value)}</span>`).join(''):'<span class="muted small">Nebyl nalezen žádný společný tematický pojem.</span>'}</div><div class="actions result-actions"><a class="question-link" href="${esc(directQuestionUrl(result.q))}" target="_blank" rel="noopener">Otevřít konkrétní otázku ↗</a></div></article>`).join('');
+    $('#results').innerHTML=list.map((result,index)=>`<article class="result"><div class="result-head"><div><div class="meta">${index+1}. místo · díl ${result.q.episode} · ${esc(result.q.time||'bez času')}</div><h3>${esc(result.q.question_cs||result.q.question_sk)}</h3>${result.q.question_sk&&result.q.question_sk!==result.q.question_cs?`<div class="muted small">${esc(result.q.question_sk)}</div>`:''}</div><span class="score">${(100*result.score).toFixed(1)} %</span></div><div class="muted small" style="margin-top:8px">Společné pojmy: ${result.matchedCount} · položená otázka: ${result.queryCount} · nalezená otázka: ${result.candidateCount}.</div><div class="chips">${result.matched.length?result.matched.map(value=>`<span class="chip">${esc(value)}</span>`).join(''):'<span class="muted small">Nebyl nalezen žádný společný tematický pojem.</span>'}</div><div class="actions result-actions"><a class="question-link" href="${esc(directQuestionUrl(result.q))}" target="_blank" rel="noopener">Otevřít konkrétní otázku ↗</a></div></article>`).join('');
   };
 
   // Při rychlém načtení z localStorage mohla být databáze sestavena ještě před tímto filtrem.
