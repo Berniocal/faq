@@ -1,7 +1,7 @@
 'use strict';
 
 // Tematické filtrování a vyvážené skóre podobnosti.
-// 100 % znamená: stejné tematické pojmy a stejný počet tematických pojmů.
+// 100 % znamená: stejné tematické pojmy, podobná délka a stejné pořadí.
 (()=>{
   if(globalThis.__vedatorThematicScoring)return;
   globalThis.__vedatorThematicScoring=true;
@@ -47,13 +47,19 @@
   function conceptBundle(text){
     const tokens=String(text||'').match(/[\p{L}\p{N}]+/gu)||[];
     const seen=new Set(),out=[];
-    for(const raw of tokens){
+    for(let tokenIndex=0;tokenIndex<tokens.length;tokenIndex++){
+      const raw=tokens[tokenIndex];
       const normalized=norm(raw);
       if(!normalized||normalized.length<2||STOP.has(normalized))continue;
       const key=canonical(normalized);
       if(!key||STOP.has(key)||seen.has(key))continue;
       seen.add(key);
-      out.push({key,label:raw.toLocaleLowerCase('cs-CZ')});
+      out.push({
+        key,
+        label:raw.toLocaleLowerCase('cs-CZ'),
+        tokenIndex,
+        contentIndex:out.length
+      });
     }
     return out;
   }
@@ -65,27 +71,78 @@
     return similarity>=0.84?similarity:0;
   }
 
+  function rarityWeight(key){
+    const frequency=df.get(key)||0;
+    const idf=Math.log((Math.max(1,corpusSize)+1)/(frequency+1))+1;
+    return Math.max(1,Math.min(5,idf));
+  }
+
+  function queryConceptWeight(concept,index,total){
+    // Začátek otázky bývá její hlavní předmět; pozdější část často doplňuje kontext.
+    // Rozdíl je záměrně mírný, aby nepřebil odbornou vzácnost slova.
+    const position=total<=1?1:1.35-0.35*(index/(total-1));
+    return rarityWeight(concept.key)*position;
+  }
+
   function matchConcepts(queryConcepts,candidateConcepts){
     const available=new Set(candidateConcepts.map((_,index)=>index));
+    const matchedQueries=new Set();
     const matches=[];
 
     // Nejdřív přesné shody.
-    for(const query of queryConcepts){
-      const index=candidateConcepts.findIndex((candidate,i)=>available.has(i)&&candidate.key===query.key);
-      if(index>=0){available.delete(index);matches.push(query);}
-    }
+    queryConcepts.forEach((query,qIndex)=>{
+      const cIndex=candidateConcepts.findIndex((candidate,index)=>available.has(index)&&candidate.key===query.key);
+      if(cIndex<0)return;
+      available.delete(cIndex);
+      matchedQueries.add(qIndex);
+      matches.push({query,candidate:candidateConcepts[cIndex],qIndex,cIndex,similarity:1});
+    });
 
     // Potom jen velmi blízké překlepy; jeden pojem lze použít pouze jednou.
-    for(const query of queryConcepts){
-      if(matches.includes(query))continue;
+    queryConcepts.forEach((query,qIndex)=>{
+      if(matchedQueries.has(qIndex))return;
       let bestIndex=-1,bestScore=0;
-      for(const index of available){
-        const score=conceptSimilarity(query.key,candidateConcepts[index].key);
-        if(score>bestScore){bestScore=score;bestIndex=index;}
+      for(const cIndex of available){
+        const score=conceptSimilarity(query.key,candidateConcepts[cIndex].key);
+        if(score>bestScore){bestScore=score;bestIndex=cIndex;}
       }
-      if(bestIndex>=0){available.delete(bestIndex);matches.push(query);}
+      if(bestIndex<0)return;
+      available.delete(bestIndex);
+      matches.push({query,candidate:candidateConcepts[bestIndex],qIndex,cIndex:bestIndex,similarity:bestScore});
+    });
+
+    return matches.sort((a,b)=>a.qIndex-b.qIndex);
+  }
+
+  function structuralSimilarity(matches,queryCount,candidateCount){
+    if(!matches.length)return 0;
+    if(matches.length===1)return 0.55;
+
+    let orderedPairs=0,totalPairs=0;
+    for(let i=0;i<matches.length;i++)for(let j=i+1;j<matches.length;j++){
+      totalPairs++;
+      if(matches[i].cIndex<matches[j].cIndex)orderedPairs++;
     }
-    return matches;
+    const orderScore=totalPairs?orderedPairs/totalPairs:1;
+
+    let gapScore=0,gapPairs=0;
+    for(let i=1;i<matches.length;i++){
+      const queryGap=Math.abs(matches[i].qIndex-matches[i-1].qIndex)/Math.max(1,queryCount-1);
+      const candidateGap=Math.abs(matches[i].cIndex-matches[i-1].cIndex)/Math.max(1,candidateCount-1);
+      gapScore+=Math.max(0,1-Math.abs(queryGap-candidateGap));
+      gapPairs++;
+    }
+    gapScore=gapPairs?gapScore/gapPairs:1;
+
+    let positionScore=0;
+    for(const match of matches){
+      const queryPosition=match.qIndex/Math.max(1,queryCount-1);
+      const candidatePosition=match.cIndex/Math.max(1,candidateCount-1);
+      positionScore+=Math.max(0,1-Math.abs(queryPosition-candidatePosition));
+    }
+    positionScore/=matches.length;
+
+    return 0.45*orderScore+0.30*gapScore+0.25*positionScore;
   }
 
   function evaluateVariant(queryConcepts,queryChargrams,candidateText){
@@ -94,22 +151,30 @@
     const matchedCount=matches.length;
     const queryCount=queryConcepts.length;
     const candidateCount=candidateConcepts.length;
-    const coverage=queryCount?matchedCount/queryCount:0;
-    const precision=candidateCount?matchedCount/candidateCount:0;
 
-    // Harmonický průměr pokrytí a přesnosti (F1 / Sørensen–Dice).
-    // Trestá chybějící pojmy i nadbytečné pojmy dlouhé nalezené otázky.
-    const score=(coverage+precision)?2*coverage*precision/(coverage+precision):0;
+    const queryWeights=queryConcepts.map((concept,index)=>queryConceptWeight(concept,index,queryConcepts.length));
+    const queryWeightTotal=queryWeights.reduce((sum,value)=>sum+value,0)||1;
+    const matchedWeight=matches.reduce((sum,match)=>sum+queryWeights[match.qIndex]*match.similarity,0);
+    const weightedCoverage=matchedWeight/queryWeightTotal;
+
     const lengthBalance=queryCount&&candidateCount
       ?Math.min(queryCount,candidateCount)/Math.max(queryCount,candidateCount)
       :0;
+    const structure=structuralSimilarity(matches,queryCount,candidateCount);
     const characterSimilarity=dice(queryChargrams,ngrams(candidateText));
+
+    // Základ tvoří vážené pokrytí položené otázky. Vzácné odborné výrazy mají
+    // větší váhu než běžná slova. Délkový faktor trestá příliš krátké i příliš
+    // dlouhé kandidáty a strukturální faktor hlídá pořadí a rozestupy pojmů.
+    const lengthFactor=0.55+0.45*lengthBalance;
+    const structureFactor=0.84+0.16*structure;
+    const score=Math.max(0,Math.min(1,weightedCoverage*lengthFactor*structureFactor));
 
     return{
       score,
-      coverage,
-      precision,
+      weightedCoverage,
       lengthBalance,
+      structure,
       characterSimilarity,
       matches,
       matchedCount,
@@ -134,20 +199,23 @@
         .sort((a,b)=>
           b.score-a.score||
           b.matchedCount-a.matchedCount||
+          b.weightedCoverage-a.weightedCoverage||
           b.lengthBalance-a.lengthBalance||
+          b.structure-a.structure||
           b.characterSimilarity-a.characterSimilarity
         )[0];
 
       return{
         q:question,
         ...best,
-        matched:best.matches.map(item=>item.label)
+        matched:best.matches.map(item=>item.query.label)
       };
     }).sort((a,b)=>
       b.score-a.score||
       b.matchedCount-a.matchedCount||
+      b.weightedCoverage-a.weightedCoverage||
       b.lengthBalance-a.lengthBalance||
-      b.coverage-a.coverage||
+      b.structure-a.structure||
       b.characterSimilarity-a.characterSimilarity||
       b.q.episode-a.q.episode
     ).slice(0,5);
