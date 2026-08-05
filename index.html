@@ -14,7 +14,7 @@
 <main class="wrap grid">
 <section class="card">
   <div class="status"><span id="statusDot" class="dot"></span><div><strong id="statusTitle">Připravuji databázi…</strong><div id="statusText" class="muted">Nejdřív hledám uloženou nebo vloženou databázi.</div><div class="progress"><div id="progressBar"></div></div></div></div>
-  <div id="sourceNote" class="note small" style="margin-top:12px">Po prvním načtení se databáze uloží do prohlížeče. Na GitHub Pages se pomocí service workeru uloží také samotná aplikace, takže ji lze příště otevřít i bez internetu. Tlačítkem níže lze vytvořit také samostatnou offline kopii s daty přímo uvnitř HTML.</div>
+  <div id="sourceNote" class="note small" style="margin-top:12px">Po prvním načtení se databáze uloží do prohlížeče. Na GitHub Pages se pomocí service workeru uloží také samotná aplikace, takže ji lze příště otevřít i bez internetu. Aplikace při připojení krátce ověří, zda v repozitáři nepřibyl nebo se nezměnil soubor s otázkami. Tlačítkem níže lze vytvořit také samostatnou offline kopii s daty přímo uvnitř HTML.</div>
   <div class="actions"><button id="refreshBtn" class="secondary" type="button">Aktualizovat z GitHubu</button></div>
 </section>
 <section class="card">
@@ -42,6 +42,7 @@
 <script src="./app-2.js"></script>
 <script src="./app-3.js"></script>
 <script src="./app-4.js"></script>
+<script src="./repository-sync.js"></script>
 <script src="./app-5.js"></script>
 </body>
 </html>
