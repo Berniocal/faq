@@ -30,7 +30,7 @@
     <div class="search-row">
       <div class="search-wrap">
         <input id="search" class="search" type="search" autocomplete="off"
-          placeholder="Zadej pojem nebo otázku – třeba foton, černá díra…">
+          placeholder="Zadej pojem nebo otázku a potvrď Enterem…">
         <button id="clear" class="clear" type="button" aria-label="Smazat vyhledávání">×</button>
       </div>
       <button id="searchButton" class="search-button" type="button">Hledat</button>
@@ -45,9 +45,9 @@
     <div class="suggestions" id="suggestions">
       <button class="suggestion" type="button">foton</button>
       <button class="suggestion" type="button">černá díra</button>
+      <button class="suggestion" type="button">kolik váží Slunce</button>
+      <button class="suggestion" type="button">jak dlouho cesta na Mars</button>
       <button class="suggestion" type="button">gravitace</button>
-      <button class="suggestion" type="button">kvantová fyzika</button>
-      <button class="suggestion" type="button">světlo</button>
       <button class="suggestion" type="button">umělá inteligence</button>
     </div>
   </section>
@@ -82,6 +82,8 @@
   </div>
 </section>
 
-<script src="app-1.js"></script><script src="app-2.js"></script><script src="app-3.js"></script><script src="app-4.js"></script>
+<script src="synonyms.js"></script>
+<script src="app-core.js"></script>
+<script src="app-ui.js"></script>
 </body>
 </html>
