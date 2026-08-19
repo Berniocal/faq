@@ -3,48 +3,85 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#4338ca">
-<title>Vedátor – hledání podobných otázek</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./app.css">
+<meta name="theme-color" content="#151b2f">
+<title>Vedátor – chytré hledání</title>
+<link rel="stylesheet" href="app.css">
+<script src="theme.js"></script>
 </head>
 <body>
-<header><div class="wrap"><h1>Vedátor: databáze otázek</h1><p>Jednotný export otázek z repozitáře a vyhledávač pěti nejpodobnějších dotazů s podporou češtiny, slovenštiny, skloňování, diakritiky a běžných překlepů.</p></div></header>
-<main class="wrap grid">
-<section class="card">
-  <div class="status"><span id="statusDot" class="dot"></span><div><strong id="statusTitle">Připravuji databázi…</strong><div id="statusText" class="muted">Nejdřív hledám uloženou nebo vloženou databázi.</div><div class="progress"><div id="progressBar"></div></div></div></div>
-  <div id="sourceNote" class="note small" style="margin-top:12px">Po prvním načtení se databáze uloží do prohlížeče. Na GitHub Pages se pomocí service workeru uloží také samotná aplikace, takže ji lze příště otevřít i bez internetu. Aplikace při připojení krátce ověří, zda v repozitáři nepřibyl nebo se nezměnil soubor s otázkami. Tlačítkem níže lze vytvořit také samostatnou offline kopii s daty přímo uvnitř HTML.</div>
-  <div class="actions"><button id="refreshBtn" class="secondary" type="button">Aktualizovat z GitHubu</button></div>
-</section>
-<section class="card">
-  <h2 style="margin-top:0">Najít 5 nejpodobnějších otázek</h2>
-  <textarea id="query" placeholder="Např.: Proč světlo neunikne z černé díry? / Prečo svetlo neunikne z čiernej diery?"></textarea>
-  <div class="actions"><button id="searchBtn" disabled>Najít podobné otázky</button><button id="demoBtn" class="secondary" disabled>Vložit ukázku</button></div>
-  <div id="results" class="results"><div class="muted">Výsledky se zobrazí po načtení databáze.</div></div>
-</section>
-<section class="card">
-  <h2 style="margin-top:0">Export</h2>
-  <p class="muted">Každý řádek obsahuje díl, pořadí, čas, přímý odkaz na konkrétní otázku, českou a slovenskou podobu, normalizovaný text, klíčová slova a rozšířené vyhledávací termíny.</p>
-  <div class="actions"><button id="csvBtn" disabled>Stáhnout CSV</button><button id="jsonBtn" class="secondary" disabled>Stáhnout JSON</button><button id="offlineBtn" class="secondary" disabled>Stáhnout offline HTML s daty</button></div>
-  <p class="muted small">Offline HTML obsahuje celou databázi přímo v souboru. Při dalším otevření nic nestahuje a funguje i bez internetu.</p>
-</section>
-<section class="card">
-  <h2 style="margin-top:0">Všechny otázky</h2>
-  <div class="toolbar"><input id="filter" type="search" placeholder="Filtrovat otázky nebo klíčová slova…" disabled><div id="visibleCount" class="muted"></div></div>
-  <div class="table-wrap"><table><thead><tr><th>ID</th><th>Díl</th><th>Čas</th><th>Otázka česky / původní</th><th>Slovensky</th><th>Klíčová slova</th><th>Odkaz</th></tr></thead><tbody id="tbody"><tr><td colspan="7" class="muted">Načítám…</td></tr></tbody></table></div>
-</section>
-<section class="card small muted">
-  <strong>Jak se podobnost počítá:</strong> Skóre hledá co nejvíce stejných tematických pojmů, ale zohledňuje také jejich význam, pořadí a rozestupy. Vzácnější odborné pojmy mají větší váhu než časté výrazy. Příliš krátká nebo příliš dlouhá nalezená otázka je penalizována a sto procent znamená stejné pojmy, podobné pořadí i stejný počet pojmů. Spojky, předložky, částice, zájmena a tázací výrazy jako „jak“ nebo „proč“ se nepočítají; odborná slova a přídavná jména zůstávají. Skloňované a české/slovenské varianty stejného pojmu se započítají pouze jednou.
-</section>
+<header>
+  <div class="wrap header-row">
+    <div class="header-title">
+      <div class="eyebrow">Neoficiální tematický katalog</div>
+      <h1 id="heading">Vedátorský podcast – chytré hledání</h1>
+    </div>
+    <div class="header-actions">
+      <div class="language" role="group" aria-label="Jazyk aplikace">
+        <button type="button" data-lang="sk">SK</button>
+        <button type="button" data-lang="cz">CZ</button>
+      </div>
+      <button id="theme" class="theme-toggle" type="button" title="Tmavý režim">☾</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="panel">
+    <div class="search-row">
+      <div class="search-wrap">
+        <input id="search" class="search" type="search" autocomplete="off"
+          placeholder="Zadej pojem nebo otázku – třeba foton, černá díra…">
+        <button id="clear" class="clear" type="button" aria-label="Smazat vyhledávání">×</button>
+      </div>
+      <button id="searchButton" class="search-button" type="button">Hledat</button>
+    </div>
+
+    <div class="tabs" aria-label="Typ výsledků">
+      <button class="tab active" data-filter="all" type="button">Vše</button>
+      <button class="tab" data-filter="question" type="button">Otázky</button>
+      <button class="tab" data-filter="nonquestion" type="button">Neotázky</button>
+    </div>
+
+    <div class="suggestions" id="suggestions">
+      <button class="suggestion" type="button">foton</button>
+      <button class="suggestion" type="button">černá díra</button>
+      <button class="suggestion" type="button">gravitace</button>
+      <button class="suggestion" type="button">kvantová fyzika</button>
+      <button class="suggestion" type="button">světlo</button>
+      <button class="suggestion" type="button">umělá inteligence</button>
+    </div>
+  </section>
+
+  <div class="status-row">
+    <div id="status">Načítám data Vedatoru…</div>
+    <div id="count"></div>
+  </div>
+
+  <section id="results" class="grid"></section>
+  <button id="more" class="load-more hidden" type="button">Zobrazit další</button>
 </main>
-<script src="./app-1.js"></script>
-<script src="./concept-dedupe.js"></script>
-<script src="./app-2.js"></script>
-<script src="./app-3.js"></script>
-<script src="./app-4.js"></script>
-<script src="./repository-sync.js"></script>
-<script src="./app-5.js"></script>
-<script src="./thematic-scoring.js"></script>
+
+<audio id="audio" preload="metadata" playsinline></audio>
+<section id="player" class="player-shell hidden" aria-label="Přehrávač">
+  <div class="player-inner">
+    <div>
+      <div id="playerTitle" class="player-title">Vedátorský podcast</div>
+      <div id="playerSub" class="player-sub"></div>
+    </div>
+    <div class="player-controls">
+      <button id="back10" type="button">−10 s</button>
+      <button id="playPause" class="play-toggle" type="button">Přehrát</button>
+      <button id="forward10" type="button">+10 s</button>
+      <button id="closePlayer" type="button" title="Sbalit">↓</button>
+    </div>
+    <div class="player-seek-row">
+      <span id="current">0:00</span>
+      <input id="seek" class="player-seek" type="range" min="0" max="1" value="0" step="1">
+      <span id="duration">–:––</span>
+    </div>
+  </div>
+</section>
+
+<script src="app-1.js"></script><script src="app-2.js"></script><script src="app-3.js"></script><script src="app-4.js"></script>
 </body>
 </html>
