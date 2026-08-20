@@ -11,12 +11,40 @@ html[data-theme="dark"] mark.search-hit{
   background:#8a6f00;
   color:#fff7c2;
 }
-.answer.collapsed.match-focused{
-  display:block;
-  -webkit-line-clamp:unset;
-  max-height:7.25em;
-  overflow-y:auto;
-  overscroll-behavior:contain;
-  scrollbar-width:none;
+
+/* Žádný vnitřní scroll v kartách. Celý pohyb patří stránce. */
+.answer,.match-preview{
+  touch-action:pan-y;
+  overscroll-behavior:auto;
 }
-.answer.collapsed.match-focused::-webkit-scrollbar{display:none}
+.answer.match-focused{
+  max-height:none!important;
+  overflow:visible!important;
+}
+
+/* Když je zásah mimo prvních 5 řádků, zobrazí se kompaktní výřez. */
+.match-preview{
+  margin:.15rem 0 .55rem;
+  padding:8px 10px;
+  border-left:3px solid #d4a900;
+  border-radius:8px;
+  background:color-mix(in srgb,#ffeb3b 16%,var(--card));
+  color:color-mix(in srgb,var(--ink) 92%,var(--muted));
+  font-size:.9rem;
+  line-height:1.42;
+}
+.match-preview-label{
+  margin-bottom:3px;
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.035em;
+}
+.match-preview ul{margin:0;padding-left:1.1rem}
+.match-preview li{margin:0}
+.match-preview-text{margin:0}
+html[data-theme="dark"] .match-preview{
+  border-left-color:#8a6f00;
+  background:rgba(138,111,0,.16);
+}
