@@ -2,8 +2,8 @@
 /*
   Žluté zvýraznění shod ve výsledcích.
   Přímé synonymum i skutečně použitý tematicky příbuzný pojem se zvýrazní
-  v názvu i v popisku. Pokud je první zásah schovaný níž v popisku,
-  posune se pouze vnitřek popisku tak, aby byl zásah vidět.
+  v názvu i v popisku. Pokud je zásah níž ve sbaleném popisku, zobrazí se
+  krátký výřez s nalezeným místem — bez vnitřního scrollování karty.
 */
 (()=>{
   if(typeof window.render!=='function')return;
@@ -92,15 +92,42 @@
     return total;
   }
 
-  function focusFirstAnswerHit(answer){
-    if(!answer)return;
+  function removePreview(card){
+    card?.querySelector(':scope > .match-preview')?.remove();
+  }
+
+  function ensureMatchPreview(card,answer){
+    removePreview(card);
+    if(!card||!answer||!answer.classList.contains('collapsed'))return;
     const hit=answer.querySelector('mark.search-hit');
-    if(!hit){answer.classList.remove('match-focused');answer.scrollTop=0;return;}
-    answer.classList.add('match-focused');
+    if(!hit)return;
+
     requestAnimationFrame(()=>{
-      const a=answer.getBoundingClientRect(),h=hit.getBoundingClientRect();
-      const target=answer.scrollTop+(h.top-a.top)-Math.max(5,answer.clientHeight*.34);
-      answer.scrollTop=Math.max(0,target);
+      if(!answer.isConnected||!answer.classList.contains('collapsed'))return;
+      const a=answer.getBoundingClientRect();
+      const h=hit.getBoundingClientRect();
+      const clipped=h.bottom>a.bottom+1||h.top<a.top-1;
+      if(!clipped)return;
+
+      const preview=document.createElement('div');
+      preview.className='match-preview';
+      const label=document.createElement('div');
+      label.className='match-preview-label';
+      label.textContent=state.lang==='sk'?'Nájdené v popise':'Nalezeno v popisku';
+      preview.append(label);
+
+      const li=hit.closest('li');
+      if(li){
+        const ul=document.createElement('ul');
+        ul.append(li.cloneNode(true));
+        preview.append(ul);
+      }else{
+        const line=document.createElement('div');
+        line.className='match-preview-text';
+        line.append(hit.parentElement?.cloneNode(true)||hit.cloneNode(true));
+        preview.append(line);
+      }
+      answer.before(preview);
     });
   }
 
@@ -115,13 +142,14 @@
       markText(card.querySelector('h2'),keys);
       const answer=card.querySelector('.answer');
       const answerHits=markText(answer,keys);
-      if(answerHits)focusFirstAnswerHit(answer);
+      if(answerHits)ensureMatchPreview(card,answer);
+
       const button=card.querySelector('.more-answer');
       if(button&&answer){
         button.addEventListener('click',()=>{
           requestAnimationFrame(()=>{
-            if(answer.classList.contains('collapsed'))focusFirstAnswerHit(answer);
-            else{answer.classList.remove('match-focused');answer.scrollTop=0;}
+            if(answer.classList.contains('collapsed'))ensureMatchPreview(card,answer);
+            else removePreview(card);
           });
         });
       }
