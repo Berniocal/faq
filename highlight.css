@@ -1,0 +1,22 @@
+/* Zvýraznění shod stejně výraznou žlutou jako ve Vedatoru. */
+mark.search-hit{
+  background:#ff0;
+  color:#162033;
+  border-radius:3px;
+  padding:0 .08em;
+  box-decoration-break:clone;
+  -webkit-box-decoration-break:clone;
+}
+html[data-theme="dark"] mark.search-hit{
+  background:#8a6f00;
+  color:#fff7c2;
+}
+.answer.collapsed.match-focused{
+  display:block;
+  -webkit-line-clamp:unset;
+  max-height:7.25em;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:none;
+}
+.answer.collapsed.match-focused::-webkit-scrollbar{display:none}
