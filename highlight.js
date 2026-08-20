@@ -1,10 +1,4 @@
 'use strict';
-/*
-  Žluté zvýraznění shod ve výsledcích.
-  Přímé synonymum i skutečně použitý tematicky příbuzný pojem se zvýrazní
-  v názvu i v popisku. Pokud je zásah níž ve sbaleném popisku, zobrazí se
-  krátký výřez s nalezeným místem — bez vnitřního scrollování karty.
-*/
 (()=>{
   if(typeof window.render!=='function')return;
   const baseRender=window.render;
@@ -92,42 +86,46 @@
     return total;
   }
 
-  function removePreview(card){
-    card?.querySelector(':scope > .match-preview')?.remove();
+  function resetAnswerFocus(answer){
+    if(!answer)return;
+    answer.classList.remove('match-focused');
+    answer.style.removeProperty('--match-shift');
   }
 
-  function ensureMatchPreview(card,answer){
-    removePreview(card);
-    if(!card||!answer||!answer.classList.contains('collapsed'))return;
+  function focusFirstAnswerHit(answer){
+    if(!answer||!answer.classList.contains('collapsed')){
+      resetAnswerFocus(answer);
+      return;
+    }
     const hit=answer.querySelector('mark.search-hit');
-    if(!hit)return;
+    if(!hit){
+      resetAnswerFocus(answer);
+      return;
+    }
+
+    answer.classList.add('match-focused');
+    answer.style.setProperty('--match-shift','0px');
 
     requestAnimationFrame(()=>{
       if(!answer.isConnected||!answer.classList.contains('collapsed'))return;
-      const a=answer.getBoundingClientRect();
-      const h=hit.getBoundingClientRect();
-      const clipped=h.bottom>a.bottom+1||h.top<a.top-1;
-      if(!clipped)return;
+      const content=answer.querySelector(':scope > ul');
+      if(!content)return;
 
-      const preview=document.createElement('div');
-      preview.className='match-preview';
-      const label=document.createElement('div');
-      label.className='match-preview-label';
-      label.textContent=state.lang==='sk'?'Nájdené v popise':'Nalezeno v popisku';
-      preview.append(label);
+      const box=answer.getBoundingClientRect();
+      const hitBox=hit.getBoundingClientRect();
 
-      const li=hit.closest('li');
-      if(li){
-        const ul=document.createElement('ul');
-        ul.append(li.cloneNode(true));
-        preview.append(ul);
-      }else{
-        const line=document.createElement('div');
-        line.className='match-preview-text';
-        line.append(hit.parentElement?.cloneNode(true)||hit.cloneNode(true));
-        preview.append(line);
+      if(hitBox.top>=box.top-1 && hitBox.bottom<=box.bottom+1){
+        answer.style.setProperty('--match-shift','0px');
+        return;
       }
-      answer.before(preview);
+
+      const visible=Math.max(1,answer.clientHeight);
+      const contentHeight=Math.max(visible,content.scrollHeight);
+      const maxShift=Math.max(0,contentHeight-visible);
+      const relativeTop=hitBox.top-box.top;
+      const desiredTop=Math.max(8,visible*.30);
+      const shift=Math.min(maxShift,Math.max(0,relativeTop-desiredTop));
+      answer.style.setProperty('--match-shift',`${-Math.round(shift)}px`);
     });
   }
 
@@ -142,14 +140,15 @@
       markText(card.querySelector('h2'),keys);
       const answer=card.querySelector('.answer');
       const answerHits=markText(answer,keys);
-      if(answerHits)ensureMatchPreview(card,answer);
+      if(answerHits)focusFirstAnswerHit(answer);
+      else resetAnswerFocus(answer);
 
       const button=card.querySelector('.more-answer');
       if(button&&answer){
         button.addEventListener('click',()=>{
           requestAnimationFrame(()=>{
-            if(answer.classList.contains('collapsed'))ensureMatchPreview(card,answer);
-            else removePreview(card);
+            if(answer.classList.contains('collapsed'))focusFirstAnswerHit(answer);
+            else resetAnswerFocus(answer);
           });
         });
       }
